@@ -1,10 +1,14 @@
-<?php namespace Modules\Core\Console;
+<?php namespace Core\Console;
 
+use Carbon\Carbon;
 use Dotenv;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Foundation\AliasLoader;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Hash;
-use Modules\User\Repositories\UserRepository;
+use Illuminate\Support\Str;
+use User\Repositories\UserRepository;
 
 class InstallCommand extends Command
 {
@@ -13,14 +17,14 @@ class InstallCommand extends Command
      *
      * @var string
      */
-    protected $name = 'platform:install';
+    protected $name = 'cms:install';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Install the Platform CMS';
+    protected $description = 'Install the CMS';
 
     /**
      * @var UserRepository
@@ -30,20 +34,13 @@ class InstallCommand extends Command
     /**
      * @var Filesystem
      */
-    private $finder;
+    private $file;
 
-    /**
-     * Create a new command instance.
-     *
-     * @param UserRepository $user
-     * @param Filesystem $finder
-     * @return \Modules\Core\Console\InstallCommand
-     */
-    public function __construct($user, Filesystem $finder)
+    public function __construct(Filesystem $file, $app)
     {
         parent::__construct();
-        $this->user = $user;
-        $this->finder = $finder;
+        $this->user = $app['User\Repositories\UserRepository'];
+        $this->file = $file;
     }
 
     /**
@@ -53,35 +50,76 @@ class InstallCommand extends Command
      */
     public function fire()
     {
-        $this->info('Starting the installation process...');
-
+        $this->comment('Starting the installation process...');
         $this->configureDatabase();
-
-		if ($this->confirm('Do you wish to init sentinel and create its first user? [yes|no]')) {
-			$this->runUserCommands();
-		}
+        $userDriverlist = [0 => 'None', 'sentry', 'sentinel (paying)'];
+        $driver = $this->choice("Which user driver do you wish use ?", $userDriverlist);
+        if (isset($driver) && !empty($driver) && $driver !== 'None') {
+            $this->{'runUser' . $driver . 'Commands'}();
+            $isUserCreated = true;
+        } else {
+            $isUserCreated = false;
+        }
 
         $this->runMigrations();
 
         $this->publishAssets();
-
-        $this->blockMessage(
-            'Success!',
-            'Platform ready! You can now login with your username and password at /backend'
-        );
+        if ($isUserCreated) {
+            $this->blockMessage(
+                'Success!',
+                'Platform ready! You can now login with your username and password at /backend'
+            );
+        } else {
+            $this->blockMessage(
+                'Success!',
+                'Platform ready! But you need to install a user driver and create an account'
+            );
+        }
     }
 
-	/**
-	 *
-	 */
-	private function runUserCommands()
-	{
-		$this->runSentinelMigrations();
-		$this->runUserSeeds();
-		$this->createFirstUser();
+    /**
+     *
+     */
+    private function runUserSentinelCommands()
+    {
+        $this->runSentinelMigrations();
+        $this->runSentinelConfigFile();
+        $this->runUserSeeds();
+        $this->createFirstUser();
 
-		$this->info('User commands done.');
-	}
+        $this->info('User commands done.');
+    }
+
+    /**
+     *
+     */
+    private function runUserSentryCommands()
+    {
+        $this->comment('Loading Sentry package (can take a bit of time...)');
+        echo system('composer require cartalyst/sentry:2.1.* --no-update');
+        $this->info('Loading done');
+//        $this->call('composer require cartalyst/sentry:2.1.*');
+        $this->comment('Running Sentry migration...');
+        $this->runSentryMigrations();
+        $this->comment('Running Sentry configuration...');
+        $this->runSentryConfigFile();
+        $this->comment('Registering Sentry to the application...');
+        App::register('Cartalyst\Sentry\SentryServiceProvider');
+        $alias = [
+            'Auth' => 'Cartalyst\Sentry\Facades\Laravel\Sentry',
+        ];
+        AliasLoader::getInstance($alias)->register();
+        $this->setSentryUserEntity();
+        $this->comment('Reloading class');
+        echo system('composer dump-autoload');
+
+        $this->info('Sentry ready !');
+
+        $this->runUserSeeds();
+        $this->createFirstUser();
+
+        $this->info('User commands done.');
+    }
 
     /**
      * Create the first user that'll have admin access
@@ -99,20 +137,20 @@ class InstallCommand extends Command
             'first_name' => $firstname,
             'last_name' => $lastname,
             'email' => $email,
-            'password' => Hash::make($password),
+            'password' => $password,
         ];
-        $this->user->createWithRoles($userInfo, ['admin']);
+        $this->user->createWithRoles($userInfo, ['Admin']);
 
         $this->info('Admin account created!');
     }
 
-	/**
-	 * Run migrations specific to Sentinel
+    /**
+     * Run migrations specific to Sentinel
      */
-	private function runSentinelMigrations()
-	{
-		$this->call('migrate', ['--package' => 'cartalyst/sentinel']);
-	}
+    private function runSentinelMigrations()
+    {
+        $this->call('migrate', ['--package' => 'cartalyst/sentinel']);
+    }
 
     /**
      * Run the migrations
@@ -124,10 +162,10 @@ class InstallCommand extends Command
         $this->info('Application migrated!');
     }
 
-	private function runUserSeeds()
-	{
-		$this->call('module:seed', ['module' => 'User']);
-	}
+    private function runUserSeeds()
+    {
+        $this->call('module:seed', ['module' => 'User']);
+    }
 
     /**
      * Symfony style block messages
@@ -156,10 +194,9 @@ class InstallCommand extends Command
      */
     private function configureDatabase()
     {
-        // Ask for credentials
-        $databaseName = $this->ask('Enter your database name');
-        $databaseUsername = $this->ask('Enter your database username');
-        $databasePassword = $this->secret('Enter your database password');
+        $databaseName = $this->ask('Enter your database name ');
+        $databaseUsername = $this->ask('Enter your database username ');
+        $databasePassword = $this->secret('Enter your database password ');
 
         $this->setLaravelConfiguration($databaseName, $databaseUsername, $databasePassword);
         $this->configureEnvironmentFile($databaseName, $databaseUsername, $databasePassword);
@@ -175,28 +212,35 @@ class InstallCommand extends Command
     {
         Dotenv::makeMutable();
 
-        $environmentFile = $this->finder->get('.env.example');
+        $environmentFile = $this->file->get('.env');
+        $this->file->put('.env.old' . Carbon::now()->timestamp, $environmentFile);
 
-        $search = [
-            "DB_USERNAME=homestead",
-            "DB_PASSWORD=homestead"
-        ];
-
-        $replace = [
-            "DB_USERNAME=$databaseUsername",
+        if ($this->laravel['config']['app.key'] == 'YourSecretKey!!!') {
+            $this->laravel['config']['app.key'] = $this->getRandomKey();
+        }
+        $env = [
+            "APP_ENV=" . App::environment() . PHP_EOL,
+            "APP_KEY=" . $this->laravel['config']['app.key'] . PHP_EOL,
+            "DB_NAME=$databaseName" . PHP_EOL,
+            "DB_USERNAME=$databaseUsername" . PHP_EOL,
             "DB_PASSWORD=$databasePassword" . PHP_EOL
         ];
-        $newEnvironmentFile = str_replace($search, $replace, $environmentFile);
-        $newEnvironmentFile .= "DB_NAME=$databaseName";
+//        $newEnvironmentFile = str_replace($search, $replace, $environmentFile);
+//        $newEnvironmentFile .= "DB_NAME=$databaseName";
 
         // Write the new environment file
-        $this->finder->put('.env', $newEnvironmentFile);
+        $this->file->put('.env', $env);
         // Delete the old environment file
-        $this->finder->delete('env.example');
+//        $this->file->delete('env.example');
 
         $this->info('Environment file written');
 
         Dotenv::makeImmutable();
+    }
+
+    protected function getRandomKey()
+    {
+        return Str::random(32);
     }
 
     /**
@@ -210,6 +254,60 @@ class InstallCommand extends Command
         $this->laravel['config']['database.connections.mysql.database'] = $databaseName;
         $this->laravel['config']['database.connections.mysql.username'] = $databaseUsername;
         $this->laravel['config']['database.connections.mysql.password'] = $databasePassword;
+    }
+
+    private function runSentryMigrations()
+    {
+        $this->call('migrate', ['--package' => 'cartalyst/sentry']);
+    }
+
+    private function runSentryConfigFile()
+    {
+        $path = 'Modules/User/Config/userdriver.php';
+        $string = "<?php return " . PHP_EOL . "[" . PHP_EOL . "'driver'=>'Sentry'," . PHP_EOL . "'seeder'=>" . PHP_EOL . "[" . PHP_EOL . "'SentryGroupSeedTableSeeder'," . PHP_EOL . "'SentryUserSeedTableSeeder'" . PHP_EOL . "]" . PHP_EOL . "];";
+        $file = $this->file->put($path, $string);
+
+        if ($file) {
+            $this->info('User driver define');
+        }
+        $this->comment('Publishing Sentry config');
+        $this->call('publish:config', ['package' => 'cartalyst/sentry']);
+    }
+
+    private function runSentinelConfigFile()
+    {
+        $path = 'Modules/User/Config/userdriver.php';
+        $string = "<?php return ['driver'=>'Sentinel','seeder'=>['SentryGroupSeedTableSeeder','SentryUserSeedTableSeeder']];";
+        $file = $this->file->put($path, $string);
+
+        if ($file) {
+            $this->info('User driver define in config file !');
+        }
+    }
+
+    private function setSentryUserEntity()
+    {
+        $entity = '<?php namespace User\Entities;
+
+use Cartalyst\Sentry\Users\Eloquent\User as SentryUser;
+use Laracasts\Presenter\PresentableTrait;
+
+class User extends SentryUser
+{
+    use PresentableTrait;
+
+    protected $fillable = [
+        "email",
+        "password",
+        "permissions",
+        "first_name",
+        "last_name"
+    ];
+
+    protected $presenter = "User\\\Presenters\\\UserPresenter";
+}
+';
+        $this->file->put('modules/User/Entities/User.php', $entity);
     }
 
 }

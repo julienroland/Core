@@ -7,6 +7,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
     </a>
+
     <div class="navbar-right">
 
         <ul class="nav navbar-nav">
@@ -28,15 +29,18 @@
                     @endforeach
                 </ul>
             </li>
+
             <!-- User Account: style can be found in dropdown.less -->
             <li class="dropdown user user-menu">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                     <i class="glyphicon glyphicon-user"></i>
                     <span>
+                        <?php if(isset($user)): ?>
                         <?php if ($user->present()->fullname() != ' '): ?>
                             <?= $user->present()->fullName(); ?>
                         <?php else: ?>
                             <em>Complete your profile.</em>
+                        <?php endif; ?>
                         <?php endif; ?>
                         <i class="caret"></i>
                     </span>
@@ -44,6 +48,7 @@
                 <ul class="dropdown-menu">
                     <!-- User image -->
                     <li class="user-header bg-light-blue">
+                       <?php if(isset($user)): ?>
                         <img src="{{ $user->present()->gravatar() }}" class="img-circle" alt="User Image" />
                         <p>
                             <?php if ($user->present()->fullname() != ' '): ?>
@@ -52,11 +57,14 @@
                                 <em>Complete your profile.</em>
                             <?php endif; ?>
                         </p>
+                        <?php endif; ?>
                     </li>
                     <!-- Menu Footer-->
                     <li class="user-footer">
                         <div class="pull-left">
+                           <?php if(isset($user)): ?>
                             <a href="{{ URL::route('dashboard.user.edit', [$user->id]) }}" class="btn btn-default btn-flat">Profile</a>
+                            <?php endif; ?>
                         </div>
                         <div class="pull-right">
                             <a href="{{ URL::route('logout')  }}" class="btn btn-default btn-flat">Sign out</a>

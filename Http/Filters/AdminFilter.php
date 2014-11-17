@@ -1,10 +1,10 @@
-<?php namespace Modules\Core\Http\Filters;
+<?php namespace Core\Http\Filters;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Redirector;
 use Illuminate\Session\Store;
 use Illuminate\Foundation\Application;
-use Modules\Core\Contracts\Authentication;
+use Core\Contracts\Authentication;
 
 class AdminFilter
 {

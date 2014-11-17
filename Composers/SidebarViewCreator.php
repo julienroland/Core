@@ -1,4 +1,4 @@
-<?php namespace Modules\Core\Composers;
+<?php namespace Core\Composers;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;

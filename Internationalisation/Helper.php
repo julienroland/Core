@@ -1,8 +1,8 @@
-<?php namespace Modules\Core\Internationalisation;
+<?php namespace Core\Internationalisation;
 
 /**
  * Class Helper
- * @package Modules\Core\Internationalisation
+ * @package Core\Internationalisation
  */
 class Helper
 {

@@ -1,6 +1,6 @@
-<?php  namespace Modules\Core\Repositories\Eloquent;
+<?php namespace Core\Repositories\Eloquent;
 
-use Modules\Core\Repositories\BaseRepository;
+use Core\Repositories\BaseRepository;
 
 /**
  * Class EloquentCoreRepository

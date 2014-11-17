@@ -1,4 +1,4 @@
-<?php namespace Modules\Core\Navigation;
+<?php namespace Core\Navigation;
 
 use Illuminate\Support\Collection;
 

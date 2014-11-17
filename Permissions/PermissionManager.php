@@ -1,7 +1,7 @@
-<?php namespace Modules\Core\Permissions;
+<?php namespace \Core\Permissions;
 
+use Cms\Support\ModuleManager as Module;
 use Illuminate\Support\Facades\Config;
-use Pingpong\Modules\Module;
 
 class PermissionManager
 {

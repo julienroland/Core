@@ -3,7 +3,12 @@
     <!-- sidebar: style can be found in sidebar.less -->
     <section class="sidebar">
         <ul class="sidebar-menu">
-            <?php $items = \Modules\Core\Navigation\NavigationOrdener::order($items); ?>
+            <?php
+            use Core\Navigation\NavigationOrdener;
+            if(isset($items)):
+
+            $items = NavigationOrdener::order($items); ?>
+
             <?php foreach($items as $i => $item): ?>
                 <?php if (is_object($item)): ?>
                     <?php if ($item[0]['permission']): ?>
@@ -34,6 +39,7 @@
                     <?php endif; ?>
                 <?php endif; ?>
             <?php endforeach; ?>
+            <?php endif; ?>
         </ul>
     </section>
     <!-- /.sidebar -->

@@ -1,6 +1,7 @@
-<?php namespace Modules\Core\Composers;
+<?php namespace Core\Composers;
 
-use Modules\Core\Contracts\Authentication;
+
+use Core\Contracts\Authentication;
 
 abstract class BaseSidebarViewComposer
 {

@@ -1,4 +1,4 @@
-<?php namespace Modules\Core\Contracts;
+<?php namespace Core\Contracts;
 
 interface Authentication
 {
@@ -27,8 +27,8 @@ interface Authentication
 
     /**
      * Assign a role to the given user.
-     * @param \Modules\User\Repositories\UserRepository $user
-     * @param \Modules\User\Repositories\RoleRepository $role
+     * @param \User\Repositories\UserRepository $user
+     * @param \User\Repositories\RoleRepository $role
      * @return mixed
      */
     public function assignRole($user, $role);

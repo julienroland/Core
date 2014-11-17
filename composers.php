@@ -1,4 +1,4 @@
 <?php
 
-View::creator('core::partials.sidebar-nav', 'Modules\Core\Composers\SidebarViewCreator');
-View::composer('core::layouts.master', 'Modules\Core\Composers\MasterViewComposer');
+View::creator('core::partials.sidebar-nav', 'Core\Composers\SidebarViewCreator');
+View::composer('core::layouts.master', 'Core\Composers\MasterViewComposer');

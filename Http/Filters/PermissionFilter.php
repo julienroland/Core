@@ -1,11 +1,11 @@
-<?php namespace Modules\Core\Http\Filters;
+<?php namespace \Core\Http\Filters;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Redirect;
 use Laracasts\Flash\Flash;
-use Modules\Core\Contracts\Authentication;
+use Core\Contracts\Authentication;
 
 class PermissionFilter
 {

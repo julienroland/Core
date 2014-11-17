@@ -1,11 +1,21 @@
-<?php namespace Modules\Core\Providers;
+<?php namespace Core\Providers;
 
-use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
-use Modules\Core\Console\InstallCommand;
+use Core\Console\InstallCommand;
+use User\Entities\User;
+use User\Repositories\UserRepository;
 
 class CoreServiceProvider extends ServiceProvider
 {
+    /**
+     * @var UserRepository
+     */
+    private $user;
+
+    public function __construct($app){
+
+        $this->app = $app;
+    }
     /**
      * Indicates if loading of the provider is deferred.
      *
@@ -27,7 +37,6 @@ class CoreServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        include __DIR__ . '/../start.php';
     }
 
     /**
@@ -37,7 +46,7 @@ class CoreServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->loadModuleProviders();
+//        $this->loadModuleProviders();
         $this->app->booted(function ($app) {
             $this->registerFilters($app['router']);
         });
@@ -59,13 +68,13 @@ class CoreServiceProvider extends ServiceProvider
      */
     private function loadModuleProviders()
     {
-        $this->app->booted(function ($app)
-        {
-            $modules = $app['modules']->enabled();
+        $this->app->booted(function ($app) {
+//            var_dump($app['modules']->all()); exit;
+            $modules = $app['modules']->getEnabled();
             foreach ($modules as $module) {
                 if ($providers = $app['modules']->prop("{$module}::providers")) {
                     foreach ($providers as $provider) {
-                        $app->register($provider);
+//                        $app->register($provider);
                     }
                 }
             }
@@ -78,12 +87,11 @@ class CoreServiceProvider extends ServiceProvider
      * @param  Router $router
      * @return void
      */
-    public function registerFilters(Router $router)
+    public function registerFilters($router)
     {
         foreach ($this->filters as $module => $filters) {
             foreach ($filters as $name => $filter) {
-                $class = "Modules\\{$module}\\Http\\Filters\\{$filter}";
-
+                $class = "modules\\{$module}\\Http\\Filters\\{$filter}";
                 $router->filter($name, $class);
             }
         }
@@ -102,10 +110,10 @@ class CoreServiceProvider extends ServiceProvider
      */
     private function registerInstallCommand()
     {
-        $this->app->bindShared('command.platform.install', function($app) {
+        $this->app->bindShared('command.platform.install', function ($app) {
             return new InstallCommand(
-                $app['Modules\User\Repositories\UserRepository'],
-                $app['files']
+                $app['files'],
+                $app
             );
         });
 

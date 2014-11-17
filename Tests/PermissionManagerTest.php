@@ -1,4 +1,4 @@
-<?php namespace Modules\Core\Tests;
+<?php namespace \Core\Tests;
 
 use Mockery;
 use Modules\Core\Permissions\PermissionManager;

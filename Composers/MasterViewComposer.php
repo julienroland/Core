@@ -1,8 +1,8 @@
-<?php namespace Modules\Core\Composers;
+<?php namespace Core\Composers;
 
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\App;
-use Modules\Core\Contracts\Setting;
+use Core\Contracts\Setting;
 
 class MasterViewComposer
 {

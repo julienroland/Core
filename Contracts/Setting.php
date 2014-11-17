@@ -1,4 +1,4 @@
-<?php namespace Modules\Core\Contracts;
+<?php namespace Core\Contracts;
 
 interface Setting
 {
